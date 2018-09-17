@@ -10,3 +10,28 @@ export function getParentNode(dom) {
     }
     return dom.parentNode
 }
+
+var lastTime = 0;
+
+export function raf(f) {
+    if (window.requestAnimationFrame) {
+        return window.requestAnimationFrame(f);
+    }
+    return requestAnimationFrame(f);
+}
+
+export function cancelRaf(tid) {
+    if (window.cancelAnimationFrame) {
+        window.cancelAnimationFrame(tid);
+    } else {
+        clearTimeout(tid);
+    }
+}
+
+function requestAnimationFrame(callback) {
+    var now = Date.now();
+    var nextTime = Math.max(lastTime + 16, now);
+    return setTimeout(function () {
+        callback((lastTime = nextTime));
+    }, nextTime - now);
+}
