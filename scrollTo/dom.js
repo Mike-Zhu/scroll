@@ -1,15 +1,24 @@
-import { getParentNode, raf, cacelRaf, easeOut } from './utils'
+import * as _ from './utils'
 
+const { getParentNode, raf, cancelRaf, cacelRaf, easeOut } = _
 let defaultOption = {
-    duration: 800
+    duration: 800,
+    timingFunction: 'easeOut'
 }
 
 let scrollTid = null
-export function scrollTo(argu) {
+// document.addEventListener('scroll', cancel)
+// function cancel() {
+//     cancelRaf(scrollTid);
+// }
+export function scrollTo(argu, option) {
+    cancelRaf(scrollTid)
     let scrollContent,
         prevScroll = argu,
         moveItem = argu,
         i = 0 //防止爆栈
+    option = Object.assign({}, option, defaultOption)
+
     while (i < 1000 && prevScroll) {
         i++
         scrollContent = getParentNode(prevScroll)
@@ -18,15 +27,15 @@ export function scrollTo(argu) {
                 moveItem,
                 isWindow: true,
                 offsetParent: window
-            })
+            }, option)
             return
         } else {
             let { offsetHeight, scrollHeight } = scrollContent
-            if (offsetHeight !== scrollHeight) {
+            if (offsetHeight !== scrollHeight && scrollHeight - offsetHeight > 20) {
                 scroll({
                     moveItem,
                     offsetParent: scrollContent
-                })
+                }, option)
                 moveItem = scrollContent
             }
             prevScroll = scrollContent
@@ -34,10 +43,9 @@ export function scrollTo(argu) {
     }
 }
 
-function scroll(argu, option = {}) {
+function scroll(argu, option) {
     const { isWindow, offsetParent, moveItem } = argu
-    option = Object.assign({}, option, defaultOption)
-    const { duration } = option
+    const { duration, timingFunction } = option
     const setScroll = function (top, left) {
         isWindow
             ? window.scrollTo({ top, left })
@@ -53,7 +61,15 @@ function scroll(argu, option = {}) {
         distanceTop = toTop - fromTop,
         prevScrollTop = null,
         prevScrollLeft = null
-
+    console.log('offsetParent', offsetParent)
+    window.offsetParent = window.offsetParent || []
+    window.offsetParent.push(offsetParent)
+    console.log('moveItem', moveItem)
+    window.moveItem = window.moveItem || []
+    window.moveItem.push(moveItem)
+    console.log('fromTop', fromTop)
+    console.log('toTop', toTop)
+    let timeFunc = _[timingFunction] || easeOut
     function loop(timescamp) {
         let {
             fromTop: currentScrollTop,
@@ -61,8 +77,8 @@ function scroll(argu, option = {}) {
         } = getOffset(isWindow, offsetParent, moveItem)
         if (!startTime) startTime = timescamp - 1;
         let timeElapsed = timescamp - startTime;
-        let valLeft = easeOut(timeElapsed, fromLeft, distanceLeft, duration)
-        let valTop = easeOut(timeElapsed, fromTop, distanceTop, duration)
+        let valLeft = timeFunc(timeElapsed, fromLeft, distanceLeft, duration)
+        let valTop = timeFunc(timeElapsed, fromTop, distanceTop, duration)
 
         prevScrollTop = currentScrollTop
         prevScrollLeft = currentScrollLeft
@@ -71,11 +87,7 @@ function scroll(argu, option = {}) {
         if (timeElapsed < duration) {
             scrollTid = raf(loop)
         } else {
-            if (currentScrollTop !== toTop || currentScrollLeft !== toLeft) {
-                scroll(argu)
-            } else {
-                setScroll(toTop, toLeft)
-            }
+            setScroll(toTop, toLeft)
         }
     }
     scrollTid = raf(loop)
