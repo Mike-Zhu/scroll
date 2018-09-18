@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import "./main.css"
 import scrollTo from '../scrollTo/dom'
 
@@ -68,3 +69,5 @@ function appendUl(ele, id) {
     ele.appendChild(ul)
     return ul
 }
+=======
+>>>>>>> parent of 21f2ee6... 文件目录
