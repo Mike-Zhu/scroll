@@ -1,7 +1,7 @@
 import * as _ from './utils'
 import Scroll from './core';
-import { tap, map } from 'rxjs/operators'
-
+import { tap, map, switchMap, switchMapTo, takeUntil } from 'rxjs/operators'
+import { Subject } from 'rxjs'
 const { getParentNode, raf, cancelRaf, cacelRaf, easeOut } = _
 let defaultOption = {
     duration: 600,
@@ -19,33 +19,21 @@ export default function scrollTo(elem, options) {
         moveItem = elem,
         i = 0, //防止爆栈
         maxBubble = options.max || 1000
-    while (i < maxBubble && prevScroll) {
-        i++
-        scrollContent = getParentNode(prevScroll)
-        if (scrollContent === window) {
-            scroll({
-                moveItem,
-                isWindow: true,
-                offsetParent: window
-            }, options)
-            return
-        } else {
-            let { offsetHeight, scrollHeight } = scrollContent
-            if (offsetHeight !== scrollHeight && scrollHeight - offsetHeight > 20) {
-                scroll({
-                    moveItem,
-                    offsetParent: scrollContent
-                }, options)
-                moveItem = scrollContent
-            }
-            prevScroll = scrollContent
-        }
-    }
-}
+    let offset = {},
+        distanceLeft = 0,
+        distanceTop = 0,
+        offsetParent = {}
 
-function scroll({ moveItem, isWindow, offsetParent }, options) {
-    const { duration, timingFunction, callback } = options
-    const setScroll = function ({top, left}) {
+    let subject$ = new Subject()
+    let cancel$ = new Subject()
+    let radio$ = (new Scroll(options)).init()
+
+    const getPosition = ratio => ({
+        left: distanceLeft * ratio + offset.fromLeft,
+        top: distanceTop * ratio + offset.fromTop
+    })
+
+    const setScroll = function ({ top, left }) {
         offsetParent.scrollTo
             ? offsetParent.scrollTo({ top, left })
             : setEle()
@@ -54,20 +42,37 @@ function scroll({ moveItem, isWindow, offsetParent }, options) {
             offsetParent.scrollLeft = left
         }
     }
-    const getPosition = ratio => ({
-        left: distanceLeft * ratio + fromLeft,
-        top: distanceTop * ratio + fromTop
-    })
-    let { fromLeft, toLeft, fromTop, toTop } = getOffset(isWindow, offsetParent, moveItem)
-    let distanceLeft = toLeft - fromLeft,
-        distanceTop = toTop - fromTop,
-        prevScrollTop = null,
-        prevScrollLeft = null
-    let ratio$ = (new Scroll(options)).init()
-    ratio$.pipe(
+
+    subject$.pipe(
+        tap(console.log),
+        switchMapTo(radio$),
+        takeUntil(cancel$),
         map(getPosition),
         tap(setScroll)
-    ).subscribe(() => ({}))
+    )
+
+    while (i < maxBubble && prevScroll) {
+        i++
+        scrollContent = getParentNode(prevScroll)
+        if (scrollContent === window) {
+            offset = getOffset(true, window, moveItem)
+            distanceLeft = offset.toLeft - offset.fromLeft
+            distanceTop = offset.toTop - offset.fromTop
+            offsetParent = window
+            subject$.next()
+            return
+        } else {
+            let { offsetHeight, scrollHeight } = scrollContent
+            if (offsetHeight !== scrollHeight && scrollHeight - offsetHeight > 20) {
+                offset = getOffset(false, scrollContent, moveItem)
+                distanceLeft = offset.toLeft - offset.fromLeft
+                distanceTop = offset.toTop - offset.fromTop
+                prevScroll = offsetParent = scrollContent
+                subject$.next()
+            }
+        }
+    }
+
 }
 
 function getOffset(isWindow, offsetParent, moveItem) {
