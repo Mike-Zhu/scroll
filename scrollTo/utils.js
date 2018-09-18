@@ -36,17 +36,6 @@ function requestAnimationFrame(callback) {
     }, nextTime - now);
 }
 
-export function isString(item) {
-    return type(item) === 'String'
-}
-
-export function isFunction(item) {
-    return type(item) === 'Function'
-}
-
-function type(obj) {
-    return Object.prototype.toString.call(obj).replace(/\[object\s|\]/g, '')
-}
 
 export const easeIn = function (t, b, c, d) {
     return c * (t /= d) * t * t * t + b;
