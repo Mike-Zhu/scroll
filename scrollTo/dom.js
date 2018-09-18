@@ -2,7 +2,7 @@ import * as _ from './utils'
 
 const { getParentNode, raf, cancelRaf, cacelRaf, easeOut } = _
 let defaultOption = {
-    duration: 800,
+    duration: 600,
     timingFunction: 'easeOut'
 }
 
