@@ -21,7 +21,7 @@ export default class Scroll {
         this.startTime = this.startTime || timestamp - 1
         let timeElapsed = timestamp - this.startTime
         let value = timingFunction(timeElapsed, 0, 1, duration)
-        if (timestamp > duration) {
+        if (timeElapsed > duration) {
             observer.finish && observer.finish()
         } else {
             observer.next(value)
