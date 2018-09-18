@@ -1,5 +1,5 @@
 {
-  "name": "mReact",
+  "name": "scrollTo",
   "version": "v0.0.1",
   "scripts": {
     "start": "webpack && webpack-dev-server --open",
@@ -30,10 +30,11 @@
   "dependencies": {
     "babel-cli": "^6.24.1",
     "babel-core": "^6.24.1",
-    "babel-loader": "7",
+    "babel-loader": "^7.1.4",
     "babel-plugin-react-require": "^3.0.0",
     "babel-preset-latest": "^6.24.1",
     "babel-preset-react": "^6.24.1",
-    "babel-preset-stage-0": "^6.24.1"
+    "babel-preset-stage-0": "^6.24.1",
+    "rxjs": "^6.3.2"
   }
 }

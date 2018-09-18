@@ -1,4 +1,17 @@
 #root{
+    /* width: 3000px; */
+}
+#ul,#ul2{
     height: 600px;
     overflow: auto;
+    display: block;
+}
+.ctxDiv{
+    height: 200px;
+    margin: 0 100px;
+    width: 800px;
+    display: inline-block;
+}
+li{
+    height: 210px;
 }
