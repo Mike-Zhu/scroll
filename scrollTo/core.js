@@ -4,6 +4,4 @@ export default class Scroll{
     constructor(element){
         this.rollArea = element
     }
-
-    
 }

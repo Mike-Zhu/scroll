@@ -37,6 +37,7 @@ window.ran = function () {
     })
 }
 
+setInterval(ran,3000)
 // setTimeout(() => {
 //     scrollTo(divList[29])
 // }, 1000)

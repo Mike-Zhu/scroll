@@ -61,14 +61,10 @@ function scroll(argu, option) {
         distanceTop = toTop - fromTop,
         prevScrollTop = null,
         prevScrollLeft = null
-    console.log('offsetParent', offsetParent)
     window.offsetParent = window.offsetParent || []
     window.offsetParent.push(offsetParent)
-    console.log('moveItem', moveItem)
     window.moveItem = window.moveItem || []
     window.moveItem.push(moveItem)
-    console.log('fromTop', fromTop)
-    console.log('toTop', toTop)
     let timeFunc = _[timingFunction] || easeOut
     function loop(timescamp) {
         let {
@@ -106,9 +102,15 @@ function getOffset(isWindow, offsetParent, moveItem) {
             toTop: newScrollTop
         }
     } else {
-        let newScrollTop = moveItem.offsetTop - moveItem.offsetHeight,
+        let offsetTop = moveItem.offsetTop,
+            offsetLeft = moveItem.offsetLeft
+        if (moveItem.offsetParent === offsetParent.offsetParent) {
+            offsetTop = offsetTop - offsetParent.offsetTop + moveItem.offsetHeight
+            offsetLeft = offsetLeft - offsetParent.offsetLeft + moveItem.offsetWidth
+        }
+        let newScrollTop = offsetTop - moveItem.offsetHeight,
             oldScrollTop = offsetParent.scrollTop,
-            newScrollLeft = moveItem.offsetLeft - moveItem.offsetWidth,
+            newScrollLeft = offsetLeft - moveItem.offsetWidth,
             oldScrollLeft = offsetParent.scrollLeft
         return {
             fromLeft: oldScrollLeft,
