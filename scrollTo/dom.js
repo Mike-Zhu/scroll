@@ -44,12 +44,12 @@ export default function scrollTo(elem, options) {
     }
 
     subject$.pipe(
-        tap(console.log),
         switchMapTo(radio$),
         takeUntil(cancel$),
         map(getPosition),
-        tap(setScroll)
-    )
+    ).subscribe({
+        next: v => setScroll(v) || console.log(v) 
+    })
 
     while (i < maxBubble && prevScroll) {
         i++
@@ -59,7 +59,7 @@ export default function scrollTo(elem, options) {
             distanceLeft = offset.toLeft - offset.fromLeft
             distanceTop = offset.toTop - offset.fromTop
             offsetParent = window
-            subject$.next()
+            subject$.next(1)
             return
         } else {
             let { offsetHeight, scrollHeight } = scrollContent
@@ -68,7 +68,7 @@ export default function scrollTo(elem, options) {
                 distanceLeft = offset.toLeft - offset.fromLeft
                 distanceTop = offset.toTop - offset.fromTop
                 prevScroll = offsetParent = scrollContent
-                subject$.next()
+                subject$.next(1)
             }
         }
     }
