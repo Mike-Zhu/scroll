@@ -45,10 +45,10 @@ export function scrollTo(argu, option) {
 
 function scroll(argu, option) {
     const { isWindow, offsetParent, moveItem } = argu
-    const { duration, timingFunction } = option
+    const { duration, timingFunction, callback } = option
     const setScroll = function (top, left) {
-        isWindow
-            ? window.scrollTo({ top, left })
+        offsetParent.scrollTo
+            ? offsetParent.scrollTo({ top, left })
             : setEle()
         function setEle() {
             offsetParent.scrollTop = top
@@ -61,18 +61,17 @@ function scroll(argu, option) {
         distanceTop = toTop - fromTop,
         prevScrollTop = null,
         prevScrollLeft = null
-    window.offsetParent = window.offsetParent || []
-    window.offsetParent.push(offsetParent)
-    window.moveItem = window.moveItem || []
-    window.moveItem.push(moveItem)
+
     let timeFunc = _[timingFunction] || easeOut
     function loop(timescamp) {
         let {
             fromTop: currentScrollTop,
             fromLeft: currentScrollLeft
         } = getOffset(isWindow, offsetParent, moveItem)
-        if (!startTime) startTime = timescamp - 1;
+
+        startTime = startTime || timescamp - 1
         let timeElapsed = timescamp - startTime;
+
         let valLeft = timeFunc(timeElapsed, fromLeft, distanceLeft, duration)
         let valTop = timeFunc(timeElapsed, fromTop, distanceTop, duration)
 
@@ -83,7 +82,9 @@ function scroll(argu, option) {
         if (timeElapsed < duration) {
             scrollTid = raf(loop)
         } else {
+            let { toLeft, toTop } = getOffset(isWindow, offsetParent, moveItem)
             setScroll(toTop, toLeft)
+            callback && callback()
         }
     }
     scrollTid = raf(loop)

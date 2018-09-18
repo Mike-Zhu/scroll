@@ -1,7 +1,7 @@
 #root{
-    width: 3000px;
+    /* width: 3000px; */
 }
-#ul{
+#ul,#ul2{
     height: 600px;
     overflow: auto;
     display: block;
