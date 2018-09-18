@@ -1,4 +1,7 @@
 import * as _ from './utils'
+import { create } from 'domain';
+import Scroll from './core';
+import { resolve } from 'dns';
 
 const { getParentNode, raf, cancelRaf, cacelRaf, easeOut } = _
 let defaultOption = {
@@ -11,6 +14,37 @@ let scrollTid = null
 // function cancel() {
 //     cancelRaf(scrollTid);
 // }
+
+export function cancelScrollTo() {
+    cancelRaf(scrollTid)
+}
+
+export function backToScroll(){
+
+}
+
+export function createScroller(elem, options) {
+    Scrol.create({
+        next: value => {
+
+        },
+        finish: value => {
+            resolve()
+        },
+        cacel: () => {
+
+        }
+    })
+    
+}
+
+export default function scroll(elem, options) {
+    return createScroll({
+        scroller: createScroller(),
+        ...options,
+    })
+}
+
 export function scrollTo(argu, option) {
     cancelRaf(scrollTid)
     let scrollContent,
