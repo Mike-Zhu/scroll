@@ -1,7 +1,6 @@
 import * as _ from './utils'
-import { create } from 'domain';
 import Scroll from './core';
-import { resolve } from 'dns';
+import { tap, map } from 'rxjs/operators'
 
 const { getParentNode, raf, cancelRaf, cacelRaf, easeOut } = _
 let defaultOption = {
@@ -9,51 +8,18 @@ let defaultOption = {
     timingFunction: 'easeOut'
 }
 
-let scrollTid = null
-// document.addEventListener('scroll', cancel)
-// function cancel() {
-//     cancelRaf(scrollTid);
-// }
-
-export function cancelScrollTo() {
-    cancelRaf(scrollTid)
-}
-
-export function backToScroll(){
-
-}
-
-export function createScroller(elem, options) {
-    Scrol.create({
-        next: value => {
-
-        },
-        finish: value => {
-            resolve()
-        },
-        cacel: () => {
-
-        }
-    })
-    
-}
-
-export default function scroll(elem, options) {
-    return createScroll({
-        scroller: createScroller(),
+export default function scrollTo(elem, options) {
+    options = Object.assign({}, defaultOption, options)
+    options = {
         ...options,
-    })
-}
-
-export function scrollTo(argu, option) {
-    cancelRaf(scrollTid)
+        timingFunction: getTiminFunction(options)
+    }
     let scrollContent,
-        prevScroll = argu,
-        moveItem = argu,
-        i = 0 //防止爆栈
-    option = Object.assign({}, option, defaultOption)
-
-    while (i < 1000 && prevScroll) {
+        prevScroll = elem,
+        moveItem = elem,
+        i = 0, //防止爆栈
+        maxBubble = options.max || 1000
+    while (i < maxBubble && prevScroll) {
         i++
         scrollContent = getParentNode(prevScroll)
         if (scrollContent === window) {
@@ -61,7 +27,7 @@ export function scrollTo(argu, option) {
                 moveItem,
                 isWindow: true,
                 offsetParent: window
-            }, option)
+            }, options)
             return
         } else {
             let { offsetHeight, scrollHeight } = scrollContent
@@ -69,7 +35,7 @@ export function scrollTo(argu, option) {
                 scroll({
                     moveItem,
                     offsetParent: scrollContent
-                }, option)
+                }, options)
                 moveItem = scrollContent
             }
             prevScroll = scrollContent
@@ -77,10 +43,9 @@ export function scrollTo(argu, option) {
     }
 }
 
-function scroll(argu, option) {
-    const { isWindow, offsetParent, moveItem } = argu
-    const { duration, timingFunction, callback } = option
-    const setScroll = function (top, left) {
+function scroll({ moveItem, isWindow, offsetParent }, options) {
+    const { duration, timingFunction, callback } = options
+    const setScroll = function ({top, left}) {
         offsetParent.scrollTo
             ? offsetParent.scrollTo({ top, left })
             : setEle()
@@ -89,39 +54,20 @@ function scroll(argu, option) {
             offsetParent.scrollLeft = left
         }
     }
-    let startTime = null
+    const getPosition = ratio => ({
+        left: distanceLeft * ratio + fromLeft,
+        top: distanceTop * ratio + fromTop
+    })
     let { fromLeft, toLeft, fromTop, toTop } = getOffset(isWindow, offsetParent, moveItem)
     let distanceLeft = toLeft - fromLeft,
         distanceTop = toTop - fromTop,
         prevScrollTop = null,
         prevScrollLeft = null
-
-    let timeFunc = _[timingFunction] || easeOut
-    function loop(timescamp) {
-        let {
-            fromTop: currentScrollTop,
-            fromLeft: currentScrollLeft
-        } = getOffset(isWindow, offsetParent, moveItem)
-
-        startTime = startTime || timescamp - 1
-        let timeElapsed = timescamp - startTime;
-
-        let valLeft = timeFunc(timeElapsed, fromLeft, distanceLeft, duration)
-        let valTop = timeFunc(timeElapsed, fromTop, distanceTop, duration)
-
-        prevScrollTop = currentScrollTop
-        prevScrollLeft = currentScrollLeft
-
-        setScroll(valTop, valLeft)
-        if (timeElapsed < duration) {
-            scrollTid = raf(loop)
-        } else {
-            let { toLeft, toTop } = getOffset(isWindow, offsetParent, moveItem)
-            setScroll(toTop, toLeft)
-            callback && callback()
-        }
-    }
-    scrollTid = raf(loop)
+    let ratio$ = (new Scroll(options)).init()
+    ratio$.pipe(
+        map(getPosition),
+        tap(setScroll)
+    ).subscribe(() => ({}))
 }
 
 function getOffset(isWindow, offsetParent, moveItem) {
@@ -154,4 +100,15 @@ function getOffset(isWindow, offsetParent, moveItem) {
             toTop: newScrollTop
         }
     }
+}
+
+function getTiminFunction(options) {
+    let { timingFunction } = options
+    if (_.isFunction(timingFunction)) {
+        return timingFunction
+    }
+    if (_.isString(timingFunction)) {
+        return _[timingFunction] || easeOut
+    }
+    return easeOut
 }
