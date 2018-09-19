@@ -3,30 +3,6 @@ import scrollTo from '../scrollTo/dom'
 import { Observable, of, Subject, interval } from 'rxjs'
 import { tap, map, switchMap, switchMapTo, takeUntil, filter } from 'rxjs/operators'
 
-var subject = new Subject()
-
-var i = 0
-subject.pipe(
-    tap(
-        v => i++
-    ),
-    switchMapTo(
-        interval(1000).pipe(
-            tap({
-                next: v => {
-                    console.log(`${i} +++ next`)
-                }
-            })
-        )
-    )
-).subscribe({
-
-})
-subject.next(1)
-setTimeout(() => {
-    subject.next(1)
-
-}, 3000)
 
 
 

@@ -23,9 +23,7 @@ export default class Scroll {
         let value = timingFunction(timeElapsed, 0, 1, duration)
         if (timeElapsed > duration) {
             observer.next(1)
-            console.log(observer.isStopped)
             observer.complete()
-            console.log(observer.isStopped)
         } else {
             observer.next(value)
             raf(this.loop)

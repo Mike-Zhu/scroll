@@ -1,10 +1,10 @@
 import * as _ from './utils'
 import Scroll from './core';
-import { tap, map, switchMap, switchMapTo, takeUntil, filter } from 'rxjs/operators'
-import { Subject, of, empty, identity, noop } from 'rxjs'
+import { tap, map, switchMap, switchMapTo, takeUntil, filter, mapTo, take, takeWhile, delayWhen, delay } from 'rxjs/operators'
+import { Subject, of, empty, identity, noop, interval, timer } from 'rxjs'
 const { getParentNode, raf, cancelRaf, cacelRaf, easeOut } = _
 let defaultOption = {
-    duration: 600,
+    duration: 800,
     timingFunction: 'easeOut'
 }
 
@@ -18,59 +18,69 @@ export default function scrollTo(elem, options) {
         prevScroll = elem,
         moveItem = elem,
         i = 0, //防止爆栈
-        maxBubble = options.max || 1000
+        maxBubble = options.max || 100
 
     let subject$ = new Subject()
     let cancel$ = new Subject()
+
     let getRadio$ = function () {
         return (new Scroll(options)).init()
     }
-    let doScroll = (offset, offsetParent) => {
-        console.log(offsetParent, "触发")
+    let doScroll = ({ offset, offsetParent }) => {
         return getRadio$().pipe(
             takeUntil(cancel$),
             map(ratio => getPosition(offset, ratio)),
-            tap(position => setScroll(offsetParent, position))
+            tap(position => setScroll(offsetParent, position)),
+            tap({
+                complete: () => subject$.next(),
+                error:console.log
+            })
         )
     }
 
     subject$.pipe(
-        // tap(({offset}) => console.log(offset,"触发")),
-        switchMap((data) => {
-            console.log(data.isEmpty, data.offset)
-            return data.isEmpty ? empty() : doScroll(data.offset, data.offsetParent)
-        })
+        take(maxBubble),
+        takeWhile(isValidHTML),
+        map(getData),
+        switchMap(data => data.isEmpty ? empty().pipe(
+            tap({
+                complete: () => subject$.next()
+            })
+        ) : doScroll(data)),
+
     ).subscribe({
-        // next: console.log
+        complete: v => console.log('结束了')
     })
 
-    while (i < maxBubble && (scrollContent = getParentNode(prevScroll))) {
-        i++
-        prevScroll = scrollContent
+    subject$.next(1)
+    setTimeout(() => cancel$.next(1), 500)
+
+    function isValidHTML() {
+        return prevScroll = scrollContent = getParentNode(prevScroll)
+    }
+    function getData() {
         if (scrollContent === window) {
             let offset = getOffset(true, window, moveItem)
             let offsetParent = window
-            subject$.next({
+            return {
                 isEmpty: false,
                 offset,
                 offsetParent
-            })
-            return
+            }
         }
         let { offsetHeight, scrollHeight } = scrollContent
         if (offsetHeight !== scrollHeight && scrollHeight - offsetHeight > 20) {
             let offset = getOffset(false, scrollContent, moveItem)
-            let offsetParent = scrollContent
-            subject$.next({
+            moveItem = scrollContent
+            return {
                 isEmpty: false,
                 offset,
-                offsetParent
-            })
-            moveItem = scrollContent
+                offsetParent: scrollContent
+            }
         } else {
-            subject$.next({
+            return {
                 isEmpty: true
-            })
+            }
         }
     }
 }
@@ -84,7 +94,6 @@ function getPosition(offset, ratio) {
 }
 
 function setScroll(offsetParent, { top, left }) {
-    console.log(offsetParent, { top, left })
     offsetParent.scrollTo
         ? offsetParent.scrollTo({ top, left })
         : setEle()
