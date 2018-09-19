@@ -5,7 +5,8 @@ import { Subject, of, empty, identity, noop, interval, timer } from 'rxjs'
 const { getParentNode, raf, cancelRaf, cacelRaf, easeOut } = _
 let defaultOption = {
     duration: 800,
-    timingFunction: 'easeOut'
+    timingFunction: 'easeOut',
+    maxBubble: 5
 }
 
 export default function scrollTo(elem, options) {
@@ -17,24 +18,21 @@ export default function scrollTo(elem, options) {
     let scrollContent,
         prevScroll = elem,
         moveItem = elem,
-        i = 0, //防止爆栈
-        maxBubble = options.max || 100
+        maxBubble = options.maxBubble
 
     let subject$ = new Subject()
     let cancel$ = new Subject()
-
-    let getRadio$ = function () {
-        return (new Scroll(options)).init()
-    }
-    let doScroll = ({ offset, offsetParent }) => {
-        return getRadio$().pipe(
+    let doScroll = ({ offset, offsetParent, isEmpty }) => {
+        let getRadio$ = () => (new Scroll(options)).init()
+        let socket$ = isEmpty ? empty() : getRadio$()
+        let subscribition = {
+            next: position => setScroll(offsetParent, position),
+            complete: () => subject$.next(1),
+        }
+        return socket$.pipe(
             takeUntil(cancel$),
             map(ratio => getPosition(offset, ratio)),
-            tap(position => setScroll(offsetParent, position)),
-            tap({
-                complete: () => subject$.next(),
-                error:console.log
-            })
+            tap(subscribition)
         )
     }
 
@@ -42,19 +40,21 @@ export default function scrollTo(elem, options) {
         take(maxBubble),
         takeWhile(isValidHTML),
         map(getData),
-        switchMap(data => data.isEmpty ? empty().pipe(
-            tap({
-                complete: () => subject$.next()
-            })
-        ) : doScroll(data)),
-
+        switchMap(doScroll)
     ).subscribe({
         complete: v => console.log('结束了')
     })
 
     subject$.next(1)
-    setTimeout(() => cancel$.next(1), 500)
-
+    return {
+        cancel: function () {
+            cancel$.next(1)
+        },
+        redirect: function (newElem) {
+            cancel$.next(1)
+            scrollTo(newElem, options)
+        }
+    }
     function isValidHTML() {
         return prevScroll = scrollContent = getParentNode(prevScroll)
     }

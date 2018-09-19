@@ -52,7 +52,7 @@ window.ran = function (ranNum, num) {
         : parseInt(Math.random() * list.length)
 
     console.log(`运动到 ${type} 第${num}个`)
-    scrollTo(list[num])
+    window.ali = scrollTo(list[num])
 }
 
 window.$scrollTo = scrollTo
