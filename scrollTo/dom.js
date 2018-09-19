@@ -6,7 +6,7 @@ const { getParentNode, raf, cancelRaf, cacelRaf, easeOut } = _
 let defaultOption = {
     duration: 800,
     timingFunction: 'easeOut',
-    maxBubble: 5
+    maxBubble: 10
 }
 
 export default function scrollTo(elem, options) {
@@ -30,7 +30,6 @@ export default function scrollTo(elem, options) {
             complete: () => subject$.next(1),
         }
         return socket$.pipe(
-            takeUntil(cancel$),
             map(ratio => getPosition(offset, ratio)),
             tap(subscribition)
         )
@@ -40,7 +39,9 @@ export default function scrollTo(elem, options) {
         take(maxBubble),
         takeWhile(isValidHTML),
         map(getData),
-        switchMap(doScroll)
+        switchMap(doScroll),
+        takeUntil(cancel$)
+
     ).subscribe({
         complete: v => console.log('结束了')
     })
