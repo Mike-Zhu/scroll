@@ -22,7 +22,8 @@ export default class Scroll {
         let timeElapsed = timestamp - this.startTime
         let value = timingFunction(timeElapsed, 0, 1, duration)
         if (timeElapsed > duration) {
-            observer.finish && observer.finish()
+            observer.next(1)
+            observer.complete(timeElapsed)
         } else {
             observer.next(value)
             raf(this.loop)

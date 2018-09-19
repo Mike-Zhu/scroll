@@ -1,7 +1,7 @@
 import * as _ from './utils'
 import Scroll from './core';
-import { tap, map, switchMap, switchMapTo, takeUntil } from 'rxjs/operators'
-import { Subject } from 'rxjs'
+import { tap, map, switchMap, switchMapTo, takeUntil, filter } from 'rxjs/operators'
+import { Subject, of } from 'rxjs'
 const { getParentNode, raf, cancelRaf, cacelRaf, easeOut } = _
 let defaultOption = {
     duration: 600,
@@ -25,13 +25,17 @@ export default function scrollTo(elem, options) {
         offsetParent = {}
 
     let subject$ = new Subject()
+    let subjectContinue$ = new Subject()
     let cancel$ = new Subject()
-    let radio$ = (new Scroll(options)).init()
-
-    const getPosition = ratio => ({
-        left: distanceLeft * ratio + offset.fromLeft,
-        top: distanceTop * ratio + offset.fromTop
-    })
+    let getRadio$ = function () {
+        return (new Scroll(options)).init()
+    }
+    const getPosition = ratio => {
+        return {
+            left: distanceLeft * ratio + offset.fromLeft,
+            top: distanceTop * ratio + offset.fromTop
+        }
+    }
 
     const setScroll = function ({ top, left }) {
         offsetParent.scrollTo
@@ -44,35 +48,50 @@ export default function scrollTo(elem, options) {
     }
 
     subject$.pipe(
-        switchMapTo(radio$),
+        switchMapTo(getRadio$()),
+        filter(v => v !== 'empty'),
         takeUntil(cancel$),
         map(getPosition),
+        tap(setScroll)
     ).subscribe({
-        next: v => setScroll(v) || console.log(v) 
+        // next:v => console.log(v),
+        complete: v => console.log('completd=>', v),
+        error: v => console.log(v)
     })
 
-    while (i < maxBubble && prevScroll) {
+    subjectContinue$.subscribe({
+        next: v => v < 100 && setOneScroll()
+    })
+
+    setOneScroll()
+    function setOneScroll() {
         i++
-        scrollContent = getParentNode(prevScroll)
-        if (scrollContent === window) {
-            offset = getOffset(true, window, moveItem)
-            distanceLeft = offset.toLeft - offset.fromLeft
-            distanceTop = offset.toTop - offset.fromTop
-            offsetParent = window
-            subject$.next(1)
-            return
-        } else {
+        if (i < maxBubble && prevScroll) {
+            scrollContent = getParentNode(prevScroll)
+            prevScroll = scrollContent
+            if (scrollContent === window) {
+                offset = getOffset(true, window, moveItem)
+                distanceLeft = offset.toLeft - offset.fromLeft
+                distanceTop = offset.toTop - offset.fromTop
+                offsetParent = window
+                console.log('window导致的滚动')
+                subject$.next(true)
+                return
+            }
+
             let { offsetHeight, scrollHeight } = scrollContent
             if (offsetHeight !== scrollHeight && scrollHeight - offsetHeight > 20) {
                 offset = getOffset(false, scrollContent, moveItem)
                 distanceLeft = offset.toLeft - offset.fromLeft
                 distanceTop = offset.toTop - offset.fromTop
-                prevScroll = offsetParent = scrollContent
-                subject$.next(1)
+                offsetParent = scrollContent
+                console.log('局部导致的滚动')
+                subject$.next(true)
+            } else {
+                subjectContinue$.next(i)
             }
         }
     }
-
 }
 
 function getOffset(isWindow, offsetParent, moveItem) {
