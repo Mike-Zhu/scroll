@@ -1,23 +1,49 @@
 import "./main.css"
 import scrollTo from '../scrollTo/dom'
-import { Observable, of } from 'rxjs'
+import { Observable, of, Subject, interval } from 'rxjs'
 import { tap, map, switchMap, switchMapTo, takeUntil, filter } from 'rxjs/operators'
 
-// var aaa = Observable.create(observer => {
-//     observer.next(1)
-//     observer.next(2)
-//     observer.next(3)
-//     console.log(observer.isStopped)
-//     observer.complete()
-//     console.log(observer.isStopped)
-// })
-// aaa.pipe(
-//     map(v => v + 's' && console.log(v))
-// ).subscribe({
-//     next: v => console.log(v),
-//     complete: v => console.log('completd=>', v),
-//     error: v => console.log(v)
-// })
+var subject = new Subject()
+
+var i = 0
+subject.pipe(
+    tap(
+        v => i++
+    ),
+    switchMapTo(
+        interval(1000).pipe(
+            tap({
+                next: v => {
+                    console.log(`${i} +++ next`)
+                }
+            })
+        )
+    )
+).subscribe({
+
+})
+subject.next(1)
+setTimeout(() => {
+    subject.next(1)
+
+}, 3000)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 let root = document.querySelector('#root')
 let listArray = Array(10).fill(1).map(res => [])
@@ -48,7 +74,7 @@ window.ran = function (ranNum, num) {
     num = num || num === 0
         ? num
         : parseInt(Math.random() * list.length)
-        
+
     console.log(`运动到 ${type} 第${num}个`)
     scrollTo(list[num])
 }

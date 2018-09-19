@@ -26,98 +26,76 @@ export default function scrollTo(elem, options) {
         return (new Scroll(options)).init()
     }
     let doScroll = (offset, offsetParent) => {
+        console.log(offsetParent, "触发")
         return getRadio$().pipe(
             takeUntil(cancel$),
             map(ratio => getPosition(offset, ratio)),
-            tap(position => setScroll(offsetParent, position)),
-            tap({
-                complete: () => {
-                    console.log('doscroll')
-                    startScroll()
-                }
-            })
+            tap(position => setScroll(offsetParent, position))
         )
-    }
-    let returnEmpty = () => {
-        return empty().pipe(
-            tap({
-                complete: () => {
-                    console.log('empty')
-                    startScroll()
-                }
-            })
-        )
-    }
-    function getPosition(offset, ratio) {
-        let distanceLeft = offset.toLeft - offset.fromLeft
-        let distanceTop = offset.toTop - offset.fromTop
-        return {
-            left: distanceLeft * ratio + offset.fromLeft,
-            top: distanceTop * ratio + offset.fromTop
-        }
-    }
-
-    function setScroll(offsetParent, { top, left }) {
-        offsetParent.scrollTo
-            ? offsetParent.scrollTo({ top, left })
-            : setEle()
-        return true
-        function setEle() {
-            offsetParent.scrollTop = top
-            offsetParent.scrollLeft = left
-        }
     }
 
     subject$.pipe(
-        switchMap(({
-            offset,
-            isEmpty,
-            offsetParent
-        }) => {
-            return isEmpty ? returnEmpty() : doScroll(offset, offsetParent)
+        // tap(({offset}) => console.log(offset,"触发")),
+        switchMap((data) => {
+            console.log(data.isEmpty, data.offset)
+            return data.isEmpty ? empty() : doScroll(data.offset, data.offsetParent)
         })
     ).subscribe({
         // next: console.log
     })
 
-    startScroll()
-    function startScroll() {
-        console.log('startScroll  ' + i)
+    while (i < maxBubble && (scrollContent = getParentNode(prevScroll))) {
         i++
-        if (i < maxBubble && (scrollContent = getParentNode(prevScroll))) {
-            prevScroll = scrollContent
-            if (scrollContent === window) {
-                let offset = getOffset(true, window, moveItem)
-                console.log(offset)
-                let offsetParent = window
-                subject$.next({
-                    isEmpty: false,
-                    offset,
-                    offsetParent
-                })
-                return
-            }
-            let { offsetHeight, scrollHeight } = scrollContent
-            if (offsetHeight !== scrollHeight && scrollHeight - offsetHeight > 20) {
-                let offset = getOffset(false, scrollContent, moveItem)
-                console.log(offset)
-                let offsetParent = scrollContent
-                subject$.next({
-                    isEmpty: false,
-                    offset,
-                    offsetParent
-                })
-            } else {
-                subject$.next({
-                    isEmpty: true
-                })
-            }
+        prevScroll = scrollContent
+        if (scrollContent === window) {
+            let offset = getOffset(true, window, moveItem)
+            let offsetParent = window
+            subject$.next({
+                isEmpty: false,
+                offset,
+                offsetParent
+            })
+            return
         }
+        let { offsetHeight, scrollHeight } = scrollContent
+        if (offsetHeight !== scrollHeight && scrollHeight - offsetHeight > 20) {
+            let offset = getOffset(false, scrollContent, moveItem)
+            let offsetParent = scrollContent
+            subject$.next({
+                isEmpty: false,
+                offset,
+                offsetParent
+            })
+            moveItem = scrollContent
+        } else {
+            subject$.next({
+                isEmpty: true
+            })
+        }
+    }
+}
+function getPosition(offset, ratio) {
+    let distanceLeft = offset.toLeft - offset.fromLeft
+    let distanceTop = offset.toTop - offset.fromTop
+    return {
+        left: distanceLeft * ratio + offset.fromLeft,
+        top: distanceTop * ratio + offset.fromTop
+    }
+}
+
+function setScroll(offsetParent, { top, left }) {
+    console.log(offsetParent, { top, left })
+    offsetParent.scrollTo
+        ? offsetParent.scrollTo({ top, left })
+        : setEle()
+    return true
+    function setEle() {
+        offsetParent.scrollTop = top
+        offsetParent.scrollLeft = left
     }
 }
 
 function getOffset(isWindow, offsetParent, moveItem) {
-    console.log(isWindow, offsetParent, moveItem)
     if (isWindow) {
         let newScrollTop = moveItem.offsetTop,
             oldScrollTop = offsetParent.scrollY,
