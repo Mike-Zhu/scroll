@@ -1,7 +1,7 @@
 import * as _ from './utils'
 import Scroll from './core';
 import { tap, map, switchMap, switchMapTo, takeUntil, filter } from 'rxjs/operators'
-import { Subject, of } from 'rxjs'
+import { Subject, of, empty, identity, noop } from 'rxjs'
 const { getParentNode, raf, cancelRaf, cacelRaf, easeOut } = _
 let defaultOption = {
     duration: 600,
@@ -19,28 +19,49 @@ export default function scrollTo(elem, options) {
         moveItem = elem,
         i = 0, //防止爆栈
         maxBubble = options.max || 1000
-    let offset = {},
-        distanceLeft = 0,
-        distanceTop = 0,
-        offsetParent = {}
 
     let subject$ = new Subject()
-    let subjectContinue$ = new Subject()
     let cancel$ = new Subject()
     let getRadio$ = function () {
         return (new Scroll(options)).init()
     }
-    const getPosition = ratio => {
+    let doScroll = (offset, offsetParent) => {
+        return getRadio$().pipe(
+            takeUntil(cancel$),
+            map(ratio => getPosition(offset, ratio)),
+            tap(position => setScroll(offsetParent, position)),
+            tap({
+                complete: () => {
+                    console.log('doscroll')
+                    startScroll()
+                }
+            })
+        )
+    }
+    let returnEmpty = () => {
+        return empty().pipe(
+            tap({
+                complete: () => {
+                    console.log('empty')
+                    startScroll()
+                }
+            })
+        )
+    }
+    function getPosition(offset, ratio) {
+        let distanceLeft = offset.toLeft - offset.fromLeft
+        let distanceTop = offset.toTop - offset.fromTop
         return {
             left: distanceLeft * ratio + offset.fromLeft,
             top: distanceTop * ratio + offset.fromTop
         }
     }
 
-    const setScroll = function ({ top, left }) {
+    function setScroll(offsetParent, { top, left }) {
         offsetParent.scrollTo
             ? offsetParent.scrollTo({ top, left })
             : setEle()
+        return true
         function setEle() {
             offsetParent.scrollTop = top
             offsetParent.scrollLeft = left
@@ -48,53 +69,55 @@ export default function scrollTo(elem, options) {
     }
 
     subject$.pipe(
-        switchMapTo(getRadio$()),
-        filter(v => v !== 'empty'),
-        takeUntil(cancel$),
-        map(getPosition),
-        tap(setScroll)
+        switchMap(({
+            offset,
+            isEmpty,
+            offsetParent
+        }) => {
+            return isEmpty ? returnEmpty() : doScroll(offset, offsetParent)
+        })
     ).subscribe({
-        // next:v => console.log(v),
-        complete: v => console.log('completd=>', v),
-        error: v => console.log(v)
+        // next: console.log
     })
 
-    subjectContinue$.subscribe({
-        next: v => v < 100 && setOneScroll()
-    })
-
-    setOneScroll()
-    function setOneScroll() {
+    startScroll()
+    function startScroll() {
+        console.log('startScroll  ' + i)
         i++
-        if (i < maxBubble && prevScroll) {
-            scrollContent = getParentNode(prevScroll)
+        if (i < maxBubble && (scrollContent = getParentNode(prevScroll))) {
             prevScroll = scrollContent
             if (scrollContent === window) {
-                offset = getOffset(true, window, moveItem)
-                distanceLeft = offset.toLeft - offset.fromLeft
-                distanceTop = offset.toTop - offset.fromTop
-                offsetParent = window
-                console.log('window导致的滚动')
-                subject$.next(true)
+                let offset = getOffset(true, window, moveItem)
+                console.log(offset)
+                let offsetParent = window
+                subject$.next({
+                    isEmpty: false,
+                    offset,
+                    offsetParent
+                })
                 return
             }
-
             let { offsetHeight, scrollHeight } = scrollContent
             if (offsetHeight !== scrollHeight && scrollHeight - offsetHeight > 20) {
-                offset = getOffset(false, scrollContent, moveItem)
-                distanceLeft = offset.toLeft - offset.fromLeft
-                distanceTop = offset.toTop - offset.fromTop
-                offsetParent = scrollContent
-                console.log('局部导致的滚动')
-                subject$.next(true)
+                let offset = getOffset(false, scrollContent, moveItem)
+                console.log(offset)
+                let offsetParent = scrollContent
+                subject$.next({
+                    isEmpty: false,
+                    offset,
+                    offsetParent
+                })
             } else {
-                subjectContinue$.next(i)
+                subject$.next({
+                    isEmpty: true
+                })
             }
         }
     }
 }
 
 function getOffset(isWindow, offsetParent, moveItem) {
+    console.log(isWindow, offsetParent, moveItem)
     if (isWindow) {
         let newScrollTop = moveItem.offsetTop,
             oldScrollTop = offsetParent.scrollY,

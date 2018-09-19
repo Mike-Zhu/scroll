@@ -1,5 +1,23 @@
 import "./main.css"
 import scrollTo from '../scrollTo/dom'
+import { Observable, of } from 'rxjs'
+import { tap, map, switchMap, switchMapTo, takeUntil, filter } from 'rxjs/operators'
+
+// var aaa = Observable.create(observer => {
+//     observer.next(1)
+//     observer.next(2)
+//     observer.next(3)
+//     console.log(observer.isStopped)
+//     observer.complete()
+//     console.log(observer.isStopped)
+// })
+// aaa.pipe(
+//     map(v => v + 's' && console.log(v))
+// ).subscribe({
+//     next: v => console.log(v),
+//     complete: v => console.log('completd=>', v),
+//     error: v => console.log(v)
+// })
 
 let root = document.querySelector('#root')
 let listArray = Array(10).fill(1).map(res => [])
@@ -19,15 +37,23 @@ let typeList = [
     '全局', '局部', '局部2', '全局2'
 ]
 
-window.ran = function (ranNum = parseInt(Math.random() * listArray.length, 10)) {
+window.ran = function (ranNum, num) {
+    ranNum = ranNum || ranNum === 0
+        ? ranNum
+        : parseInt(Math.random() * listArray.length, 10)
+
     let list = listArray[ranNum],
         type = typeList[ranNum]
-    let num = parseInt(Math.random() * list.length)
+
+    num = num || num === 0
+        ? num
+        : parseInt(Math.random() * list.length)
+        
     console.log(`运动到 ${type} 第${num}个`)
     scrollTo(list[num])
 }
 
-window.$scrollTo = scrollTo 
+window.$scrollTo = scrollTo
 
 // setInterval(ran, 3000)
 // setTimeout(() => {
