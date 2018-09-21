@@ -22,13 +22,13 @@ export default function scrollTo(elem, options) {
 
     let cancel$ = new Subject()
     let doScroll = ({ offset, offsetParent, isEmpty }) => {
-        let getRadio$ = () => (new Scroll(options)).init()
-        let socket$ = isEmpty ? empty() : getRadio$()
+        if(isEmpty) return true
+        let radio$ = (new Scroll(options)).init()
         let subscribition = {
             next: position => setScroll(offsetParent, position),
-            // complete: () => console.log('结束'),
+            // complete: () => console.log('单次结束后的回调'),
         }
-        return socket$.pipe(
+        return radio$.pipe(
             takeUntil(cancel$),
             map(ratio => getPosition(offset, ratio)),
         ).subscribe(subscribition)
@@ -40,7 +40,7 @@ export default function scrollTo(elem, options) {
         map(getData),
         tap(doScroll)
     ).subscribe({
-        complete: v => console.log('结束了')
+        complete: v => console.log('结束后的回调')
     })
 
     return {
@@ -91,14 +91,16 @@ function getPosition(offset, ratio) {
 }
 
 function setScroll(offsetParent, { top, left }) {
-    offsetParent.scrollTo
-        ? offsetParent.scrollTo({ top, left })
-        : setEle()
-    return true
-    function setEle() {
-        offsetParent.scrollTop = top
-        offsetParent.scrollLeft = left
-    }
+    raf(function () {
+        offsetParent.scrollTo
+            ? offsetParent.scrollTo({ top, left })
+            : setEle()
+        return true
+        function setEle() {
+            offsetParent.scrollTop = top
+            offsetParent.scrollLeft = left
+        }
+    })
 }
 
 function getOffset(isWindow, offsetParent, moveItem) {
