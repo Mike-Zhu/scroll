@@ -20,32 +20,29 @@ export default function scrollTo(elem, options) {
         moveItem = elem,
         maxBubble = options.maxBubble
 
-    let subject$ = new Subject()
     let cancel$ = new Subject()
     let doScroll = ({ offset, offsetParent, isEmpty }) => {
         let getRadio$ = () => (new Scroll(options)).init()
         let socket$ = isEmpty ? empty() : getRadio$()
         let subscribition = {
             next: position => setScroll(offsetParent, position),
-            complete: () => subject$.next(1),
+            // complete: () => console.log('结束'),
         }
         return socket$.pipe(
             takeUntil(cancel$),
             map(ratio => getPosition(offset, ratio)),
-            tap(subscribition)
-        )
+        ).subscribe(subscribition)
     }
 
-    subject$.pipe(
+    interval().pipe(
         take(maxBubble),
         takeWhile(isValidHTML),
         map(getData),
-        switchMap(doScroll)
+        tap(doScroll)
     ).subscribe({
         complete: v => console.log('结束了')
     })
 
-    subject$.next(1)
     return {
         cancel: function () {
             cancel$.next(1)
