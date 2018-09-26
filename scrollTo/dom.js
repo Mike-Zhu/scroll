@@ -10,11 +10,7 @@ let defaultOption = {
 }
 
 export default function scrollTo(elem, options) {
-    options = Object.assign({}, defaultOption, options)
-    options = {
-        ...options,
-        timingFunction: getTiminFunction(options)
-    }
+    options = getOptions(options)
     let scrollContent,
         prevScroll = elem,
         moveItem = elem,
@@ -22,7 +18,7 @@ export default function scrollTo(elem, options) {
 
     let cancel$ = new Subject()
     let doScroll = ({ offset, offsetParent, isEmpty }) => {
-        if(isEmpty) return true
+        if (isEmpty) return true
         let radio$ = (new Scroll(options)).init()
         let subscribition = {
             next: position => setScroll(offsetParent, position),
@@ -30,7 +26,7 @@ export default function scrollTo(elem, options) {
         }
         return radio$.pipe(
             takeUntil(cancel$),
-            map(ratio => getPosition(offset, ratio)),
+            map(ratio => getPositionByRatio(offset, ratio)),
         ).subscribe(subscribition)
     }
 
@@ -81,7 +77,31 @@ export default function scrollTo(elem, options) {
         }
     }
 }
-function getPosition(offset, ratio) {
+
+export function setDefaultOption(options) {
+    defaultOption = getOptions(options)
+}
+
+function getOptions(options) {
+    var assignOptions = Object.assign({}, defaultOption, options)
+    return {
+        ...assignOptions,
+        timingFunction: getTiminFunction(assignOptions)
+    }
+
+    function getTiminFunction(options) {
+        let { timingFunction } = options
+        if (_.isFunction(timingFunction)) {
+            return timingFunction
+        }
+        if (_.isString(timingFunction)) {
+            return _[timingFunction] || easeOut
+        }
+        return easeOut
+    }
+}
+
+function getPositionByRatio(offset, ratio) {
     let distanceLeft = offset.toLeft - offset.fromLeft
     let distanceTop = offset.toTop - offset.fromTop
     return {
@@ -135,13 +155,3 @@ function getOffset(isWindow, offsetParent, moveItem) {
     }
 }
 
-function getTiminFunction(options) {
-    let { timingFunction } = options
-    if (_.isFunction(timingFunction)) {
-        return timingFunction
-    }
-    if (_.isString(timingFunction)) {
-        return _[timingFunction] || easeOut
-    }
-    return easeOut
-}
