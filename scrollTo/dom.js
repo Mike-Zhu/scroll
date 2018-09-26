@@ -2,14 +2,36 @@ import * as _ from './utils'
 import Scroll from './core';
 import { tap, map, switchMap, switchMapTo, takeUntil, filter, mapTo, take, takeWhile, delayWhen, delay } from 'rxjs/operators'
 import { Subject, of, empty, identity, noop, interval, timer } from 'rxjs'
-const { getParentNode, raf, cancelRaf, cacelRaf, easeOut } = _
+const { getParentNode, raf, cancelRaf, easeOut } = _
 let defaultOption = {
     duration: 800,
     timingFunction: 'easeOut',
-    maxBubble: 5
+    maxBubble: 5,
+    axis: "xy",
+    interrupt: false,
+    margin: false,
+    offset: 0
+}
+export default class Scroll {
+    constructor(elem, options) {
+        this.elem = elem
+        this.options = getOptions(options)
+    }
+
+    toTop() {
+
+    }
+
+    scrollToBottom(){
+
+    }
+
+    scrolTo(){
+        
+    }
 }
 
-export default function scrollTo(elem, options) {
+export function scrollTo(elem, options) {
     options = getOptions(options)
     let scrollContent,
         prevScroll = elem,
@@ -53,7 +75,7 @@ export default function scrollTo(elem, options) {
     }
     function getData() {
         if (scrollContent === window) {
-            let offset = getOffset(true, window, moveItem)
+            let offset = getOffset(window, moveItem)
             let offsetParent = window
             return {
                 isEmpty: false,
@@ -63,7 +85,7 @@ export default function scrollTo(elem, options) {
         }
         let { offsetHeight, scrollHeight } = scrollContent
         if (offsetHeight !== scrollHeight && scrollHeight - offsetHeight > 20) {
-            let offset = getOffset(false, scrollContent, moveItem)
+            let offset = getOffset(scrollContent, moveItem)
             moveItem = scrollContent
             return {
                 isEmpty: false,
@@ -123,7 +145,8 @@ function setScroll(offsetParent, { top, left }) {
     })
 }
 
-function getOffset(isWindow, offsetParent, moveItem) {
+function getOffset(offsetParent, moveItem) {
+    let isWindow = offsetParent === window
     if (isWindow) {
         let newScrollTop = moveItem.offsetTop,
             oldScrollTop = offsetParent.scrollY,
