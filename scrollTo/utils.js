@@ -12,6 +12,9 @@ export function getParentNode(dom) {
 }
 
 var lastTime = 0;
+const ELEMENT_NODE_TYPE = 1
+const DOC_NODE_TYPE = 9
+const DOCUMENT_FRAGMENT_NODE_TYPE = 11
 
 export function raf(f) {
     if (window.requestAnimationFrame) {
@@ -34,6 +37,22 @@ function requestAnimationFrame(callback) {
     return setTimeout(function () {
         callback((lastTime = nextTime));
     }, nextTime - now);
+}
+
+export function isString(item) {
+    return type(item) === 'String'
+}
+
+export function isNumber(item) {
+    return type(item) === 'Number'
+}
+
+export function isHTMLElement(item) {
+    return item.nodeType && (
+        item.nodeType === ELEMENT_NODE_TYPE ||
+        item.nodeType === DOC_NODE_TYPE ||
+        item.nodeType === DOCUMENT_FRAGMENT_NODE_TYPE
+    )
 }
 
 export function isString(item) {

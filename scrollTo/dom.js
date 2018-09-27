@@ -22,12 +22,27 @@ export default class Scroll {
 
     }
 
-    scrollToBottom(){
+    scrollToBottom() {
 
     }
-
-    scrolTo(){
-        
+    /**
+     * 
+     * @param {Number || String || HTMLElement} target 
+     */
+    scrolTo(target) {
+        let targetNumber = 0
+        if (_.isString(target)) {
+            targetNumber = Number(target) || 0
+        }
+        if (_.isNumber(target)) {
+            targetNumber = target
+        }
+        if (_.isHTMLElement(target)) {
+            if (target.offsetParent !== this.elem) {
+                throw new Error(`${this.elem} is not ${target} 's offsetParent`)
+            }
+            let offset = getOffset(this.elem, target)
+        }
     }
 }
 

@@ -57,7 +57,7 @@ window.ran = function (ranNum, num) {
 
 window.$scrollTo = scrollTo
 
-setInterval(ran, 3000)
+// setInterval(ran, 3000)
 // setTimeout(() => {
 //     scrollTo(divList[29])
 // }, 1000)
