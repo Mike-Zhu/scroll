@@ -41,12 +41,15 @@ export default class Scroll {
         this.scroll
     }
 
-    toTop() {
-
+    scrollToTop() {
+        let scrollTop = this.elem.scrollTop
+        this.scrollTo(0 - scrollTop)
     }
 
     scrollToBottom() {
-
+        let number = this.elem.scrollHeight
+        let scrollTop = this.elem.scrollTop
+        this.scrollTo(number - scrollTop)
     }
 
     getOffsetByNumber(number) {
@@ -136,8 +139,8 @@ export default class Scroll {
         })
     }
 
-    calcel() {
-
+    cancel() {
+        this.cancel$.next('cancel')
     }
 }
 
