@@ -38,6 +38,7 @@ export default class Scroll {
         this.options = getOptions(options)
         this.callback = this.options.callback || _.noop
         this.cancel$ = new Subject()
+        this.scroll
     }
 
     toTop() {
@@ -69,17 +70,16 @@ export default class Scroll {
         }
     }
 
-    setScroll = distance => {
+    setScroll = ({ distance, originPostion }) => {
         let { elem, options: { offset } } = this
         offset = _.isObject(offset)
             ? offset
             : this.getOffsetByNumber(offset)
-        let top = elem.scrollTop + distance.top + offset.top
-        let left = elem.scrollLeft + distance.left + offset.left
+        let top = originPostion.top + distance.top
+        let left = originPostion.left + distance.left
         //offset 定义留空
         top = top > offset.top ? top : offset.top
         left = left > offset.left ? left : offset.left
-
         elem.scrollTo = elem.scrollTo || function scrollTo() {
             this.scrollTop = top
             this.scrollLeft = left
@@ -90,7 +90,7 @@ export default class Scroll {
      * 
      * @param {Number || String || HTMLElement} target 
      */
-    scrolTo(target) {
+    scrollTo(target) {
         let offset = {
             left: 0,
             top: 0
@@ -102,7 +102,7 @@ export default class Scroll {
         } else if (_.isNumber(target)) {
             offset = this.getOffsetByNumber(target)
         } else if (_.isHTMLElement(target)) {
-            if (target.offsetParent !== this.elem) {
+            if (target.parentNode !== this.elem) {
                 throw new Error(`${this.elem} is not ${target} 's offsetParent`)
             }
             let origin = getOffset(this.elem, target)
@@ -121,9 +121,15 @@ export default class Scroll {
             top: offset.top * ratio
         })
 
+        let originPostion = {
+            left: this.elem.scrollLeft,
+            top: this.elem.scrollTop,
+        }
+
         getRatio(options).pipe(
             takeUntil(cancel$),
-            map(getDistance)
+            map(getDistance),
+            map(distance => ({ distance, originPostion }))
         ).subscribe({
             next: this.setScroll,
             complete: () => this.callback()

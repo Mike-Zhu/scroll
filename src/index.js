@@ -7,7 +7,7 @@ import { tap, map, switchMap, switchMapTo, takeUntil, filter } from 'rxjs/operat
 let root = document.querySelector('#root')
 let listArray = Array(10).fill(1).map(res => [])
 
-addDiv(root, listArray[0])
+// addDiv(root, listArray[0])
 
 let ul = appendUl(root, 'ul')
 addLi(ul, listArray[1])
@@ -22,27 +22,34 @@ let typeList = [
     '全局', '局部', '局部2', '全局2'
 ]
 
-window.ran = function (ranNum, num) {
-    ranNum = ranNum || ranNum === 0
-        ? ranNum
-        : parseInt(Math.random() * listArray.length, 10)
+// window.ran = function (ranNum, num) {
+//     ranNum = ranNum || ranNum === 0
+//         ? ranNum
+//         : parseInt(Math.random() * listArray.length, 10)
 
-    let list = listArray[ranNum],
-        type = typeList[ranNum]
+//     let list = listArray[ranNum],
+//         type = typeList[ranNum]
 
-    num = num || num === 0
-        ? num
-        : parseInt(Math.random() * list.length)
+//     num = num || num === 0
+//         ? num
+//         : parseInt(Math.random() * list.length)
 
-    console.log(`运动到 ${type} 第${num}个`)
-    window.ali = scrollTo(list[num])
-}
+//     console.log(`运动到 ${type} 第${num}个`)
+//     window.ali = scrollTo(list[num])
+// }
 
 window.$scrollTo = scrollTo
 
-let ulScroll =  new Scroll(ul)
+let ulScroll = new Scroll(ul,{
+    offset:100
+})
 window.ulScroll = ulScroll
-
+window.ran = function () {
+    let random = parseInt(Math.random() * 50, 10)
+    let childNodes = ul.childNodes[random]
+    console.log(random)
+    ulScroll.scrollTo(childNodes)
+}
 // setInterval(ran, 3000)
 // setTimeout(() => {
 //     scrollTo(divList[29])
