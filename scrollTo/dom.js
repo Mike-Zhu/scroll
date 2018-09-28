@@ -1,5 +1,5 @@
 import * as _ from './utils'
-import Scroll from './core';
+import getRatio from './core';
 import { tap, map, switchMap, switchMapTo, takeUntil, filter, mapTo, take, takeWhile, delayWhen, delay } from 'rxjs/operators'
 import { Subject, of, empty, identity, noop, interval, timer } from 'rxjs'
 const { getParentNode, raf, cancelRaf, easeOut } = _
@@ -12,10 +12,32 @@ let defaultOption = {
     margin: false,
     offset: 0
 }
+
+function getOptions(options) {
+    var assignOptions = Object.assign({}, defaultOption, options)
+    return {
+        ...assignOptions,
+        timingFunction: getTiminFunction(assignOptions)
+    }
+
+    function getTiminFunction(options) {
+        let { timingFunction } = options
+        if (_.isFunction(timingFunction)) {
+            return timingFunction
+        }
+        if (_.isString(timingFunction)) {
+            return _[timingFunction] || easeOut
+        }
+        return easeOut
+    }
+}
+
 export default class Scroll {
     constructor(elem, options) {
         this.elem = elem
         this.options = getOptions(options)
+        this.callback = this.options.callback || _.noop
+        this.cancel$ = new Subject()
     }
 
     toTop() {
@@ -25,24 +47,91 @@ export default class Scroll {
     scrollToBottom() {
 
     }
+
+    getOffsetByNumber(number) {
+        let { axis } = this.options
+        switch (axis) {
+            case 'x':
+                return {
+                    left: number,
+                    top: 0
+                }
+            case 'y':
+                return {
+                    left: 0,
+                    top: number
+                }
+            default:
+                return {
+                    left: number,
+                    top: number
+                }
+        }
+    }
+
+    setScroll = distance => {
+        let { elem, options: { offset } } = this
+        offset = _.isObject(offset)
+            ? offset
+            : this.getOffsetByNumber(offset)
+        let top = elem.scrollTop + distance.top + offset.top
+        let left = elem.scrollLeft + distance.left + offset.left
+        //offset 定义留空
+        top = top > offset.top ? top : offset.top
+        left = left > offset.left ? left : offset.left
+
+        elem.scrollTo = elem.scrollTo || function scrollTo() {
+            this.scrollTop = top
+            this.scrollLeft = left
+        }
+        elem.scrollTo({ top, left })
+    }
     /**
      * 
      * @param {Number || String || HTMLElement} target 
      */
     scrolTo(target) {
-        let targetNumber = 0
+        let offset = {
+            left: 0,
+            top: 0
+        }, { options, cancel$ } = this
+
         if (_.isString(target)) {
-            targetNumber = Number(target) || 0
-        }
-        if (_.isNumber(target)) {
-            targetNumber = target
-        }
-        if (_.isHTMLElement(target)) {
+            let number = Number(target) || 0
+            offset = this.getOffsetByNumber(number)
+        } else if (_.isNumber(target)) {
+            offset = this.getOffsetByNumber(target)
+        } else if (_.isHTMLElement(target)) {
             if (target.offsetParent !== this.elem) {
                 throw new Error(`${this.elem} is not ${target} 's offsetParent`)
             }
-            let offset = getOffset(this.elem, target)
+            let origin = getOffset(this.elem, target)
+            offset = {
+                left: origin.left,
+                top: origin.top
+            }
+        } else if (target && (target.left || target.top)) {
+            offset = target
+        } else {
+            throw new Error(`${target} is not valid type target!`)
         }
+
+        let getDistance = ratio => ({
+            left: offset.left * ratio,
+            top: offset.top * ratio
+        })
+
+        getRatio(options).pipe(
+            takeUntil(cancel$),
+            map(getDistance)
+        ).subscribe({
+            next: this.setScroll,
+            complete: () => this.callback()
+        })
+    }
+
+    calcel() {
+
     }
 }
 
@@ -56,7 +145,7 @@ export function scrollTo(elem, options) {
     let cancel$ = new Subject()
     let doScroll = ({ offset, offsetParent, isEmpty }) => {
         if (isEmpty) return true
-        let radio$ = (new Scroll(options)).init()
+        let radio$ = getRatio(options)
         let subscribition = {
             next: position => setScroll(offsetParent, position),
             // complete: () => console.log('单次结束后的回调'),
@@ -70,6 +159,7 @@ export function scrollTo(elem, options) {
     interval().pipe(
         take(maxBubble),
         takeWhile(isValidHTML),
+        takeUntil(cancel$),
         map(getData),
         tap(doScroll)
     ).subscribe({
@@ -119,25 +209,6 @@ export function setDefaultOption(options) {
     defaultOption = getOptions(options)
 }
 
-function getOptions(options) {
-    var assignOptions = Object.assign({}, defaultOption, options)
-    return {
-        ...assignOptions,
-        timingFunction: getTiminFunction(assignOptions)
-    }
-
-    function getTiminFunction(options) {
-        let { timingFunction } = options
-        if (_.isFunction(timingFunction)) {
-            return timingFunction
-        }
-        if (_.isString(timingFunction)) {
-            return _[timingFunction] || easeOut
-        }
-        return easeOut
-    }
-}
-
 function getPositionByRatio(offset, ratio) {
     let distanceLeft = offset.toLeft - offset.fromLeft
     let distanceTop = offset.toTop - offset.fromTop
@@ -162,17 +233,15 @@ function setScroll(offsetParent, { top, left }) {
 
 function getOffset(offsetParent, moveItem) {
     let isWindow = offsetParent === window
+    let newScrollTop,
+        oldScrollTop,
+        newScrollLeft,
+        oldScrollLeft
     if (isWindow) {
-        let newScrollTop = moveItem.offsetTop,
-            oldScrollTop = offsetParent.scrollY,
-            newScrollLeft = moveItem.offsetLeft,
-            oldScrollLeft = offsetParent.scrollX
-        return {
-            fromLeft: oldScrollLeft,
-            toLeft: newScrollLeft,
-            fromTop: oldScrollTop,
-            toTop: newScrollTop
-        }
+        newScrollTop = moveItem.offsetTop
+        oldScrollTop = offsetParent.scrollY
+        newScrollLeft = moveItem.offsetLeft
+        oldScrollLeft = offsetParent.scrollX
     } else {
         let offsetTop = moveItem.offsetTop,
             offsetLeft = moveItem.offsetLeft
@@ -180,16 +249,18 @@ function getOffset(offsetParent, moveItem) {
             offsetTop = offsetTop - offsetParent.offsetTop + moveItem.offsetHeight
             offsetLeft = offsetLeft - offsetParent.offsetLeft + moveItem.offsetWidth
         }
-        let newScrollTop = offsetTop - moveItem.offsetHeight,
-            oldScrollTop = offsetParent.scrollTop,
-            newScrollLeft = offsetLeft - moveItem.offsetWidth,
-            oldScrollLeft = offsetParent.scrollLeft
-        return {
-            fromLeft: oldScrollLeft,
-            toLeft: newScrollLeft,
-            fromTop: oldScrollTop,
-            toTop: newScrollTop
-        }
+        newScrollTop = offsetTop - moveItem.offsetHeight
+        oldScrollTop = offsetParent.scrollTop
+        newScrollLeft = offsetLeft - moveItem.offsetWidth
+        oldScrollLeft = offsetParent.scrollLeft
+    }
+    return {
+        fromLeft: oldScrollLeft,
+        toLeft: newScrollLeft,
+        fromTop: oldScrollTop,
+        toTop: newScrollTop,
+        left: newScrollLeft - oldScrollLeft,
+        top: newScrollTop - oldScrollTop
     }
 }
 

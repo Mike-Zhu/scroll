@@ -39,9 +39,8 @@ function requestAnimationFrame(callback) {
     }, nextTime - now);
 }
 
-export function isString(item) {
-    return type(item) === 'String'
-}
+export function noop() { }
+
 
 export function isNumber(item) {
     return type(item) === 'Number'
@@ -61,6 +60,10 @@ export function isString(item) {
 
 export function isFunction(item) {
     return type(item) === 'Function'
+}
+
+export function isObject(item) {
+    return type(item) === 'Object'
 }
 
 function type(obj) {

@@ -1,24 +1,7 @@
 import "./main.css"
-import scrollTo from '../scrollTo/dom'
+import Scroll, { scrollTo } from '../scrollTo/dom'
 import { Observable, of, Subject, interval } from 'rxjs'
 import { tap, map, switchMap, switchMapTo, takeUntil, filter } from 'rxjs/operators'
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 let root = document.querySelector('#root')
@@ -57,10 +40,15 @@ window.ran = function (ranNum, num) {
 
 window.$scrollTo = scrollTo
 
+let ulScroll =  new Scroll(ul)
+window.ulScroll = ulScroll
+
 // setInterval(ran, 3000)
 // setTimeout(() => {
 //     scrollTo(divList[29])
 // }, 1000)
+
+
 
 
 
