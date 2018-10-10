@@ -38,9 +38,15 @@ export default class Scroll {
         this.options = getOptions(options)
         this.callback = this.options.callback || _.noop
         this.cancel$ = new Subject()
-        this.scroll
+        this.setInitScroll(this.options, this.elem)
     }
-
+    setInitScroll(options, elem) {
+        let { offset: originOffset = 0 } = options
+        let offset = this.getOffsetByTarget(originOffset)
+        if(elem.scrollTop < offset.top || elem.scrollLeft < offset.left){
+            this.scrollTo(originOffset)
+        }
+    }
     scrollToTop() {
         let scrollTop = this.elem.scrollTop
         this.scrollTo(0 - scrollTop)
@@ -83,22 +89,18 @@ export default class Scroll {
         //offset 定义留空
         top = top > offset.top ? top : offset.top
         left = left > offset.left ? left : offset.left
-        elem.scrollTo = elem.scrollTo || function scrollTo() {
+        elem.scrollTo = function scrollTo() {
             this.scrollTop = top
             this.scrollLeft = left
         }
         elem.scrollTo({ top, left })
     }
-    /**
-     * 
-     * @param {Number || String || HTMLElement} target 
-     */
-    scrollTo(target) {
+
+    getOffsetByTarget(target) {
         let offset = {
             left: 0,
             top: 0
-        }, { options, cancel$ } = this
-
+        }
         if (_.isString(target)) {
             let number = Number(target) || 0
             offset = this.getOffsetByNumber(number)
@@ -114,9 +116,26 @@ export default class Scroll {
                 top: origin.top
             }
         } else if (target && (target.left || target.top)) {
-            offset = target
+            offset = {
+                ...offset,
+                ...target
+            }
         } else {
             throw new Error(`${target} is not valid type target!`)
+            return null
+        }
+        return offset
+    }
+    /**
+     * 
+     * @param {Number || String || HTMLElement} target 
+     */
+    scrollTo(target) {
+        let { options, cancel$ } = this
+        let offset = this.getOffsetByTarget(target)
+
+        if (!offset) {
+            return
         }
 
         let getDistance = ratio => ({
@@ -143,6 +162,8 @@ export default class Scroll {
         this.cancel$.next('cancel')
     }
 }
+
+
 
 export function scrollTo(elem, options) {
     options = getOptions(options)

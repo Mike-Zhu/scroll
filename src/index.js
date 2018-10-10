@@ -1,6 +1,6 @@
 import "./main.css"
 import Scroll, { scrollTo } from '../scrollTo/dom'
-import {ul} from './dirty/addhtml'
+import { ul } from './dirty/addhtml'
 
 let typeList = [
     '全局', '局部', '局部2', '全局2'
@@ -8,13 +8,11 @@ let typeList = [
 
 
 window.$scrollTo = scrollTo
-
 let ulScroll = new Scroll(ul, {
-    offset: 100
+    offset: 1000
 })
 window.ulScroll = ulScroll
-window.ran = function () {
-    let random = parseInt(Math.random() * 50, 10)
+window.ran = function (random = parseInt(Math.random() * 50, 10)) {
     let childNodes = ul.childNodes[random]
     console.log(random)
     ulScroll.scrollTo(childNodes)
