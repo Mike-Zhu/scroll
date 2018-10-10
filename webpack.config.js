@@ -2,6 +2,8 @@ const webpack = require('webpack');
 const path = require('path');
 const uglify = require('uglifyjs-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CleanWebpackPlugin = require('clean-webpack-plugin')
+
 
 module.exports = {
     mode: "development",
@@ -44,6 +46,7 @@ module.exports = {
     },
     plugins: [
         // new uglify(),//压缩js
+        new CleanWebpackPlugin(['./dist']),
         new HtmlWebpackPlugin({
             minify: {
                 removeAttributeQuetes: true,
@@ -56,7 +59,7 @@ module.exports = {
         contentBase: path.resolve(__dirname, './dist'),
         host: 'localhost',
         compress: true,
-        inline:true,
+        inline: true,
         port: 8080
     }
 };
