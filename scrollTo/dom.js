@@ -6,15 +6,11 @@ const { getParentNode, raf, cancelRaf, easeOut } = _
 let defaultOption = {
     duration: 800,
     timingFunction: 'easeOut',
-<<<<<<< HEAD
-    maxBubble: 10
-=======
     maxBubble: 5,
     axis: "xy",
     interrupt: false,
     margin: false,
     offset: 0
->>>>>>> b4826ccf3f0cdc26ab55ebdec1f03b1fa9ba8c0e
 }
 
 function getOptions(options) {
@@ -184,17 +180,10 @@ export function scrollTo(elem, options) {
             next: position => setScroll(offsetParent, position),
             // complete: () => console.log('单次结束后的回调'),
         }
-<<<<<<< HEAD
-        return socket$.pipe(
-            map(ratio => getPosition(offset, ratio)),
-            tap(subscribition)
-        )
-=======
         return radio$.pipe(
             takeUntil(cancel$),
             map(ratio => getPositionByRatio(offset, ratio)),
         ).subscribe(subscribition)
->>>>>>> b4826ccf3f0cdc26ab55ebdec1f03b1fa9ba8c0e
     }
 
     interval().pipe(
@@ -202,13 +191,7 @@ export function scrollTo(elem, options) {
         takeWhile(isValidHTML),
         takeUntil(cancel$),
         map(getData),
-<<<<<<< HEAD
-        switchMap(doScroll),
-        takeUntil(cancel$)
-
-=======
         tap(doScroll)
->>>>>>> b4826ccf3f0cdc26ab55ebdec1f03b1fa9ba8c0e
     ).subscribe({
         complete: v => console.log('结束后的回调')
     })
