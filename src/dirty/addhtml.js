@@ -1,7 +1,7 @@
 
 
 let root = document.querySelector('#root')
-let listArray = Array(10).fill(1).map(res => [])
+export let listArray = Array(10).fill(1).map(res => [])
 
 
 

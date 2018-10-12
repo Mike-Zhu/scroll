@@ -186,6 +186,8 @@ export function scrollTo(elem, options) {
         ).subscribe(subscribition)
     }
 
+    //这里有机会用mergeMap
+    //两个影响因素，1 并行流，2，副作用需要借助块内变量
     interval().pipe(
         take(maxBubble),
         takeWhile(isValidHTML),
