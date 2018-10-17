@@ -8,10 +8,10 @@ export let listArray = Array(10).fill(1).map(res => [])
 export let ul = appendUl(root, 'ul')
 addLi(ul, listArray[1])
 
-export let ulTwo = appendUl(ul, 'ul2')
-addLi(ulTwo, listArray[2])
+// export let ul2 = appendUl(ul, 'ul2')
+// addLi(ul2, listArray[2])
 
-addDiv(root, listArray[3])
+// addDiv(root, listArray[3])
 
 listArray = listArray.filter(res => res.length > 0)
 
@@ -25,7 +25,7 @@ function addLi(ele, list, length = 50) {
     for (let i = 0; i < length; i++) {
         let li = document.createElement('li')
         li.style.height = 210
-        li.innerHTML = `${i} 这是更内部的东西`
+        li.innerHTML = `第 ${i} 条信息`
         ele.appendChild(li)
         list.push(li)
     }

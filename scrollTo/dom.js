@@ -2,6 +2,7 @@ import * as _ from './utils'
 import getRatio from './core';
 import { tap, map, switchMap, switchMapTo, takeUntil, filter, mapTo, take, takeWhile, delayWhen, delay } from 'rxjs/operators'
 import { Subject, of, empty, identity, noop, interval, timer } from 'rxjs'
+
 const { getParentNode, raf, cancelRaf, easeOut } = _
 let defaultOption = {
     duration: 800,
@@ -10,14 +11,16 @@ let defaultOption = {
     axis: "xy",
     interrupt: false,
     margin: false,
-    offset: 0
+    offset: 0,
+    callback: _.noop
 }
 
 function getOptions(options) {
     var assignOptions = Object.assign({}, defaultOption, options)
     return {
         ...assignOptions,
-        timingFunction: getTiminFunction(assignOptions)
+        timingFunction: getTiminFunction(assignOptions),
+        callback: _.isFunction(options.callback) ? options.callback : _.noop
     }
 
     function getTiminFunction(options) {
@@ -36,14 +39,14 @@ export default class Scroll {
     constructor(elem, options) {
         this.elem = elem
         this.options = getOptions(options)
-        this.callback = this.options.callback || _.noop
+        this.callback = this.options.callback
         this.cancel$ = new Subject()
         this.setInitScroll(this.options, this.elem)
     }
     setInitScroll(options, elem) {
         let { offset: originOffset = 0 } = options
         let offset = this.getOffsetByTarget(originOffset)
-        if(elem.scrollTop < offset.top || elem.scrollLeft < offset.left){
+        if (elem.scrollTop < offset.top || elem.scrollLeft < offset.left) {
             this.scrollTo(originOffset)
         }
     }
@@ -148,18 +151,28 @@ export default class Scroll {
             top: this.elem.scrollTop,
         }
 
-        getRatio(options).pipe(
-            takeUntil(cancel$),
-            map(getDistance),
-            map(distance => ({ distance, originPostion }))
-        ).subscribe({
-            next: this.setScroll,
-            complete: () => this.callback()
+        return new Promise((resolve, reject) => {
+            getRatio(options).pipe(
+                takeUntil(cancel$),
+                map(getDistance),
+                map(distance => ({ distance, originPostion }))
+            ).subscribe({
+                next: this.setScroll,
+                complete: () => {
+                    // this.callback()
+                    resolve(null)
+                },
+                error: () => {
+                    console.log('pre error')
+                    reject()
+                }
+            })
         })
+
     }
 
     cancel() {
-        this.cancel$.next('cancel')
+        this.cancel$.next()
     }
 }
 

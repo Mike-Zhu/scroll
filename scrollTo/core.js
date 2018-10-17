@@ -25,7 +25,3 @@ export default function getRatio(options) {
         rafId = raf(loop)
     })
 }
-
-export function cancel() {
-    cancelRaf(rafId)
-}
