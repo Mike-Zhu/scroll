@@ -14,9 +14,8 @@ window.addLi = (len) => addLi(ulDomlist, len)
 
 function ran(random = parseInt(Math.random() * 50, 10)) {
     let childNodes = ul.childNodes[random]
-    let promiseObj = ulScroll.scrollTo(childNodes)
-
-    promiseObj.then(e => {
+    let scrollPromise = ulScroll.scrollTo(childNodes)
+    scrollPromise.then(e => {
         console.log('next', e)
     }).catch(e => {
         console.log('error=>', error)
