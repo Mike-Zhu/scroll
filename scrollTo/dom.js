@@ -52,13 +52,23 @@ export default class Scroll {
     }
     scrollToTop() {
         let scrollTop = this.elem.scrollTop
-        this.scrollTo(0 - scrollTop)
+        let scrollTarget = 0 - scrollTop
+        return this.scrollToscrollTarget().then(() => {
+            let isHeightChange = this.elem.scrollHeight !== number
+            if (isHeightChange) return this.scrollToTop()
+            else return null
+        })
     }
 
     scrollToBottom() {
-        let number = this.elem.scrollHeight
+        let scrollHeight = this.elem.scrollHeight
         let scrollTop = this.elem.scrollTop
-        this.scrollTo(number - scrollTop)
+        let scrollTarget = scrollHeight - scrollTop
+        return this.scrollTo(scrollTarget).then(() => {
+            let isHeightChange = this.elem.scrollHeight !== scrollHeight
+            if (isHeightChange) return this.scrollToBottom()
+            else return null
+        })
     }
 
     getOffsetByNumber(number) {
@@ -159,7 +169,6 @@ export default class Scroll {
             ).subscribe({
                 next: this.setScroll,
                 complete: () => {
-                    // this.callback()
                     resolve(null)
                 },
                 error: () => {
@@ -168,9 +177,12 @@ export default class Scroll {
                 }
             })
         })
-
     }
 
+    lastCheck(originPostion) {
+        return originPostion.width === this.elem.scrollWidth
+            && originPostion.height === this.elem.scrollHeight
+    }
     cancel() {
         this.cancel$.next()
     }

@@ -5,8 +5,8 @@ export let listArray = Array(10).fill(1).map(res => [])
 
 
 
-export let ul = appendUl(root, 'ul')
-addLi(ul, listArray[1])
+export let ulDomlist = appendUl(root, 'ul')
+addLi(ulDomlist, listArray[1])
 
 // export let ul2 = appendUl(ul, 'ul2')
 // addLi(ul2, listArray[2])
